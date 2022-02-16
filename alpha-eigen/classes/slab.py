@@ -9,5 +9,6 @@ class Slab:
         self.hx = self.length / self.num_zones
         self.num_angles = num_angles
         self.mu, self.weight = np.polynomial.legendre.leggauss(num_angles)
+        self.num_groups = 1
 
 # no matter what the material type is, the same info will be needed each time
