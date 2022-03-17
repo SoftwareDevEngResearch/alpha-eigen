@@ -6,13 +6,15 @@ import numpy as np
 
 
 class OneGroup:
-    def __init__(self, slab, material):
+    def __init__(self, slab, material=None):
         self.slab = slab
         self.material = material
-        self.total_xs = np.zeros(self.slab.num_zones)
-        self.scatter_xs = np.zeros(self.slab.num_zones)
-        self.source = np.zeros(self.slab.num_zones)
-        self.phi = Phi(self.slab.num_zones)
+        self.total_xs = np.zeros((self.slab.num_zones,1))
+        self.scatter_xs = np.zeros((self.slab.num_zones,1))
+        self.chi = np.zeros((self.slab.num_zones,1))
+        self.nu_sigmaf = np.zeros((self.slab.num_zones,1))
+        self.source = np.zeros((self.slab.num_zones,1))
+        self.phi = Phi(self.slab.num_zones, self.slab.num_groups)
         self.angle = []
         self.zone = []
         for n in range(self.slab.num_angles):
@@ -21,9 +23,15 @@ class OneGroup:
     def create_zones(self):
         zone_midpoints = np.linspace(self.slab.hx / 2, self.slab.length - self.slab.hx / 2, self.slab.num_zones)
         for i in range(self.slab.num_zones):
-            self.zone.append(Zone(self.slab))
-            self.zone[i].material = self.material
-#            self.zone[i].assign_homog_material(midpoint=zone_midpoints[i])
+            self.zone.append(Zone(self.slab, zone_midpoints[i]))
+            if self.material is None:
+                self.slab.assign_zone_material(self.zone[i])
+            else:
+                self.zone[i].material = self.material
+            self.total_xs[i,:] = self.zone[i].material.total_xs
+            self.scatter_xs[i,:] = self.zone[i].material.scatter_xs
+            self.chi[i,:] = self.zone[i].material.chi
+            self.nu_sigmaf[i,:] = self.zone[i].material.nu_sigmaf
 
     def sweep1D(self, angle, source):
         assert(np.abs(angle.mu) > 1e-10)
@@ -35,47 +43,66 @@ class OneGroup:
                 psi_right = (source[i] + (angle.mu*ihx - 0.5*self.zone[i].material.total_xs)*psi_left)/(0.5*self.zone[i].material.total_xs + angle.mu*ihx)
                 psi[i] = 0.5*(psi_left + psi_right)
                 psi_left = psi_right
+        else:
+            psi_right = 0
+            for i in reversed(range(self.slab.num_zones)):
+                psi_left = (source[i] + (-angle.mu*ihx - 0.5*self.zone[i].material.total_xs)*psi_right)/(0.5*self.zone[i].material.total_xs - angle.mu*ihx)
+                psi[i] = 0.5*(psi_right + psi_left)
+                psi_right = psi_left
+        angle.psi_midpoint = psi
         return psi
 
-    def source_iteration(self, tolerance=1.0e-8, max_iterations=100):
-        self.phi.reset_scalar_flux()
-        psi_mid = np.zeros((self.slab.num_zones, self.slab.num_angles))
+    def source_iteration_for_scalar_flux(self, tolerance=1.0e-8, max_iterations=100):
+        nu_sigmaf = np.zeros(self.slab.num_zones)
+        chi = nu_sigmaf.copy()
+
+        phi_old = np.zeros((self.slab.num_zones,1)) + 1e-12
         converged = False
         iteration = 0
         while not converged:
+            phi = np.zeros((self.slab.num_zones,1))
             iteration += 1
             assert iteration < max_iterations, "Warning: source iteration did not converge"
-            source = self.source + self.phi.old*self.material.scatter_xs*0.5
+            source = self.source + phi_old*self.scatter_xs*0.5
             for n in range(self.slab.num_angles):
-                psi_mid[:,n] = self.sweep1D(self.angle[n], source)
-                self.phi.new += psi_mid[:,n]*self.angle[n].weight
-            change = np.linalg.norm(self.phi.new - self.phi.old)/np.linalg.norm(self.phi.new)
+                psi_mid = self.sweep1D(self.angle[n], source)
+                psi_mid = np.reshape(psi_mid, [self.slab.num_zones,1])
+                phi += psi_mid[:]*self.angle[n].weight
+            change = np.linalg.norm(phi - phi_old)/np.linalg.norm(phi)
             converged = change < tolerance
-
-    def perform_power_iteration(self, tolerance=1.0e-8, max_iterations=100):
-        k = Eigenvalue()
-        iteration = 0
-        while k.converged is False:
-            iteration += 1
-            assert iteration < max_iterations, "Warning: source iteration did not converge"
-            self.source = np.zeros((self.slab.num_zones, self.slab.num_groups))
-            # compute fission source
-            for i in range(self.slab.num_zones):
-                self.source += 0.5*self.zone[i].material.chi*self.zone[i].material.nusigma_f*self.phi.old[i]
-            self.source_iteration()
-            k.new = np.linalg.norm(self.phi.new) / np.linalg.norm(self.phi.old)
-            k.converged = np.abs(k.new - k.old) < tolerance
-            k.old = k.new
-            self.phi.old = self.phi.new / k.new
-        return k
+            phi_old = phi.copy()
+        self.phi.new = phi_old
 
     def calculate_scalar_flux(self):
+        phi = np.zeros(self.slab.num_zones)
+        phi_old = phi.copy()
+        converged = False
+        iteration = 0
+        while not converged:
+            source = self.source + 0.5
         # Sweep over each direction to calculate angular flux
         for n in range(self.slab.num_angles):
             self.angle[n].calculate_midpoint_flux()
         # Sum scalar flux in each zone
         for n in range(self.slab.num_angles):
             self.phi.new += self.angle[n].psi_midpoint
+
+    def perform_power_iteration(self, tolerance=1.0e-8, max_iterations=100):
+        k = Eigenvalue()
+        iteration = 0
+        while not k.converged:
+            iteration += 1
+            assert iteration < max_iterations, "Warning: power iteration did not converge"
+            # Compute fission source - 0 for one-group problem
+            self.source = np.zeros((self.slab.num_zones, self.slab.num_groups))
+            self.source += 0.5*self.chi*self.nu_sigmaf*self.phi.old
+            # Use source iteration to calculate scalar flux
+            self.source_iteration_for_scalar_flux()
+            k.new = np.linalg.norm(self.nu_sigmaf*self.phi.new) / np.linalg.norm(self.nu_sigmaf*self.phi.old)
+            k.converged = np.abs(k.new - k.old) < tolerance
+            k.old = k.new
+            self.phi.old = self.phi.new / k.new
+        return k
 
     def one_group_source_iteration(self, tolerance=1.0e-8, max_iterations=100):
         self.phi.reset_scalar_flux()
