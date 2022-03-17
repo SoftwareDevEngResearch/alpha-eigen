@@ -2,16 +2,32 @@ import numpy as np
 import h5py
 
 
-class Material(object):
+class SimpleMaterial(object):
     def __init__(self, material_type, num_groups):
         self.name = material_type
+        self.num_groups = num_groups
+        self.total_xs = 1.0
+        self.chi = 1.0
+        self.inv_speed = 1.0
+        if self.name == 'fuel':
+            self.scatter_xs = 0.8
+            self.nu_sigmaf = 0.7
+        elif self.name == 'moderator':
+            self.scatter_xs = 0.8
+            self.nu_sigmaf = 0.0
+        elif self.name == 'absorber':
+            self.scatter_xs = 0.1
+            self.nu_sigmaf = 0.0
+        else:
+            self.scatter_xs = None
+            self.nu_sigmaf = None
+
+
+class Material(SimpleMaterial):
+    def __init__(self, material_type, num_groups):
+        super().__init__(material_type, num_groups)
+        self.name = material_type
         self.filename = './data/' + str(num_groups) + '_group/' + str(material_type) + '.hdf5'
-        self.scatter_xs = None
-        self.total_xs = None
-        self.chi = None
-        self.nu_sigmaf = None
-        self.inv_speed = None
-        self.nusigma_f = None
         self.group_edges = None
         self.group_centers = None
         self.num_energy_groups = num_groups

@@ -1,5 +1,5 @@
 import numpy as np
-from classes.phi import Phi
+from alpha_eigen.phi import Phi
 
 
 class Zone:

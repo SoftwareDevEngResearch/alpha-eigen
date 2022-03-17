@@ -3,9 +3,9 @@ import numpy as np
 
 # there are various problem definitions within slab. The simplest form is 1D, one-speed, homogeneous slab
 class Slab:
-    def __init__(self, length, num_zones, num_angles):
+    def __init__(self, length, cells_per_mfp, num_angles):
         self.length = length
-        self.num_zones = num_zones
+        self.num_zones = self.length*cells_per_mfp
         self.hx = self.length / self.num_zones
         self.num_angles = num_angles
         self.mu, self.weight = np.polynomial.legendre.leggauss(num_angles)
@@ -13,8 +13,8 @@ class Slab:
 
 
 class SymmetricHeterogeneousSlab(Slab):
-    def __init__(self, length, num_zones, num_angles, mod_mat, fuel_mat, abs_mat):
-        super().__init__(length, num_zones, num_angles)
+    def __init__(self, length, cells_per_mfp, num_angles, mod_mat, fuel_mat, abs_mat):
+        super().__init__(length, cells_per_mfp, num_angles)
         self.fuel_thick = 1
         self.mod_thick = 1
         self.absorber_material = 5
@@ -54,3 +54,15 @@ class SymmetricHeterogeneousSlab(Slab):
         elif self.mod2_right <= zone.midpoint <= self.fuel2_right:
             zone.material = self.fuel_material
             zone.region_name = 'fuel'
+
+
+class MultiRegionSlab(Slab):
+    def __init__(self, length, cells_per_mfp, num_angles, reflector_thick, inner_thick, num_zones,num_groups, material1, material2):
+        super.__init__(length, cells_per_mfp, num_angles)
+        self.reflector_thick = reflector_thick
+        self.inner_thick = inner_thick
+        self.fuel_thick = (length - 2*reflector_thick - inner_thick) / 2
+        self.num_zones = num_zones
+        self.num_groups = num_groups
+        self.metal = material1
+        self.polyethylene = material2
