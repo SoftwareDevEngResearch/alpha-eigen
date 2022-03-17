@@ -1,4 +1,4 @@
-from classes.group import OneGroup
+from alpha_eigen.group import OneGroup
 import numpy as np
 
 
