@@ -1,4 +1,4 @@
-from alpha_eigen.group import OneGroup
+from alpha_eigen_modules.group import OneGroup
 import numpy as np
 
 
@@ -9,19 +9,19 @@ class TimeUnit:
         self.num_steps = num_steps
         self.slab = slab
         self.group = group
-        self.source = np.zeros((slab.num_zones, slab.num_angles))
-        self.phi = np.zeros((slab.num_zones, num_steps))
-        self.psi = np.zeros((slab.num_zones, slab.num_angles, num_steps))
+        self.source = np.zeros((slab.num_zones, slab.num_angles, 1))
+        self.phi = np.zeros((slab.num_zones, 1, num_steps))
+        self.psi = np.zeros((slab.num_zones, slab.num_angles, 1, num_steps))
         self.dt = dt
 
     def calculate_time_dependent_flux(self):
         for n in range(self.slab.num_angles):
-            self.source[:,n] = self.group.source
+            self.source[:,n] = self.group.source[:]
         for step in range(self.num_steps):
             k = self.group.perform_power_iteration()
-            self.phi[:,step] = np.reshape(self.group.phi.new,100)
+            self.phi[:,0,step] = np.reshape(self.group.phi.new, self.slab.num_zones)    # Fix broadcasting error
             for n in range(self.slab.num_angles):
-                self.psi[:,n,step] = self.group.angle[n].psi_midpoint
+                self.psi[:,n,:,step] = self.group.angle[n].psi_midpoint
 
     def compute_alpha_eigenvalues(self, skip=2):
         it = self.num_steps-1

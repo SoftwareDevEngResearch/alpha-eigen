@@ -1,7 +1,7 @@
-from .context import alpha_eigen
-from alpha_eigen.slab import SymmetricHeterogeneousSlab
-from alpha_eigen.group import OneGroup
-from alpha_eigen.material import SimpleMaterial
+from .context import alpha_eigen_modules
+from alpha_eigen_modules.slab import SymmetricHeterogeneousSlab
+from alpha_eigen_modules.group import OneGroup
+from alpha_eigen_modules.material import SimpleMaterial
 """ 
 This input runs a steady-state version of the heterogeneous slab problem in 
 Kornreich, Drew & Parsons, D.. (2005). Time–eigenvalue calculations in multi-region 
