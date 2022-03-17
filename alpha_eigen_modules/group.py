@@ -1,7 +1,7 @@
-from alpha_eigen.one_direction import OneDirection
-from alpha_eigen.phi import Phi, ZoneFlux
-from alpha_eigen.zone import Zone
-from alpha_eigen.eigenvalue import Eigenvalue
+from alpha_eigen_modules.one_direction import OneDirection
+from alpha_eigen_modules.phi import Phi, ZoneFlux
+from alpha_eigen_modules.zone import Zone
+from alpha_eigen_modules.eigenvalue import Eigenvalue
 import numpy as np
 
 
@@ -49,7 +49,7 @@ class OneGroup:
                 psi_left = (source[i] + (-angle.mu*ihx - 0.5*self.zone[i].material.total_xs)*psi_right)/(0.5*self.zone[i].material.total_xs - angle.mu*ihx)
                 psi[i] = 0.5*(psi_right + psi_left)
                 psi_right = psi_left
-        angle.psi_midpoint = psi
+        angle.psi_midpoint[:,0] = psi
         return psi
 
     def source_iteration_for_scalar_flux(self, tolerance=1.0e-8, max_iterations=100):

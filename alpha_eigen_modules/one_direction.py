@@ -11,7 +11,7 @@ class OneDirection(object):
         self.weight = self.slab.weight[number]
         self.boundary_condition = 0
         self.psi_zone_boundaries = np.zeros(self.slab.num_zones + 1)
-        self.psi_midpoint = np.zeros(self.slab.num_zones)
+        self.psi_midpoint = np.zeros((self.slab.num_zones,1))
         if self.mu > 0:
             self.create_rhs_vector = self.set_positive_boundary_condition()
         else:
