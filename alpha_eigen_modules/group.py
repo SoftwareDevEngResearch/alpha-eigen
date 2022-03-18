@@ -13,6 +13,7 @@ class OneGroup:
         self.scatter_xs = np.zeros((self.slab.num_zones,1))
         self.chi = np.zeros((self.slab.num_zones,1))
         self.nu_sigmaf = np.zeros((self.slab.num_zones,1))
+        self.inv_speed = np.ones((self.slab.num_zones,1))
         self.source = np.zeros((self.slab.num_zones,1))
         self.phi = Phi(self.slab.num_zones, self.slab.num_groups)
         self.angle = []
@@ -33,14 +34,20 @@ class OneGroup:
             self.chi[i,:] = self.zone[i].material.chi
             self.nu_sigmaf[i,:] = self.zone[i].material.nu_sigmaf
 
-    def sweep1D(self, angle, source):
+    def reset(self):
+        self.source = np.zeros((self.slab.num_zones,1))
+        self.phi = Phi(self.slab.num_zones, self.slab.num_groups)
+
+    def sweep1D(self, angle, source, sigT = None):
+        if sigT is None:
+            sigT = self.total_xs
         assert(np.abs(angle.mu) > 1e-10)
         psi = np.zeros(self.slab.num_zones)
         ihx = 1/self.slab.hx
         if angle.mu > 0:
             psi_left = 0
             for i in range(self.slab.num_zones):
-                psi_right = (source[i] + (angle.mu*ihx - 0.5*self.zone[i].material.total_xs)*psi_left)/(0.5*self.zone[i].material.total_xs + angle.mu*ihx)
+                psi_right = (source[i] + (angle.mu*ihx - 0.5*sigT[i])*psi_left)/(0.5*sigT[i] + angle.mu*ihx)
                 psi[i] = 0.5*(psi_left + psi_right)
                 psi_left = psi_right
         else:

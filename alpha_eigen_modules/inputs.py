@@ -52,4 +52,4 @@ def kornreich_parsons_symmetric(length, cells_per_mfp, num_angles, time_steps=1)
         print("alphas = ", alpha_eigs)
 
 if __name__ == "__main__":
-    kornreich_parsons_symmetric(length=9, cells_per_mfp=50, num_angles=16, time_steps=4)
+    kornreich_parsons_symmetric(length=9, cells_per_mfp=50, num_angles=4, time_steps=50)
