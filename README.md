@@ -1,5 +1,6 @@
 # alpha-eigen
-Using dynamic mode decomposition to calculate alpha-eigenvalues for time-dependent radiation transport problems.
+Using dynamic mode decomposition to calculate alpha-eigenvalues for time-dependent radiation transport problems. 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6367729.svg)](https://doi.org/10.5281/zenodo.6367729)
 
 ## Installation
 1. Clone this repo
