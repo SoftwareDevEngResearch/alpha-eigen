@@ -6,7 +6,7 @@ from alpha_eigen_modules.inputs import kornreich_parsons_symmetric
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--problem', type=str, required=True, help='options: kornreich_parsons_symmetric')       # Problem name
+parser.add_argument('--problem', type=str, required=True, help='options: kornreich-parsons-symmetric')       # Problem name
 parser.add_argument('--length', type=int, required=False)       # Length of slab; if not included, default is used
 parser.add_argument('--cells_per_mfp', type=int, required=False)
 parser.add_argument('--num_angles', type=int, required=False)
